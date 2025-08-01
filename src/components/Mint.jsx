@@ -12,7 +12,7 @@ import {
   useApproveUSDT,
   useMintWithUSDT,
 } from "../utils/useContract";
-
+import logo from "../components/assets/WhatsApp Image 2025-08-01 at 12.19.08 PM.png"
 function Mint() {
   const { priceUSDT } = useMintPriceUSDT("1");
 
@@ -35,7 +35,7 @@ function Mint() {
     <>
       <ToastContainer />
       <nav className="navbar">
-        <div className="logo">Crypto Soldiers</div>
+        <div className="logo"><img width={150} src={logo} alt="" /></div>
         <WalletConnect />
       </nav>
 
@@ -51,10 +51,10 @@ function Mint() {
               <br />
               <span className="strat">Price: {priceUSDT} USDT</span>
               <br />
-              <span className="strat">Remaining: {totalSupply}/{MaxSupply}</span>
+              <span className="strat">Remaining: {totalSupply}</span>
             </span>
           </div>
-
+{/* /{MaxSupply} */}
           <button className="mint-button" onClick={() => mintNFT(priceBNB)}>
             Mint ETH
           </button>

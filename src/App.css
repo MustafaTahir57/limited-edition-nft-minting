@@ -3,7 +3,7 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+ font-family: 'Varsity', sans-serif;
 }
 
 body {
@@ -100,8 +100,12 @@ body {
 
 .mint-card h2 {
   margin-bottom: 1.2rem;
-  color: #00f7ff;
+  color: #ffffff;
   font-size: 1.7rem;
+
+ 
+  letter-spacing: 1px;
+  text-transform: uppercase;
 }
 
 .nft-preview {

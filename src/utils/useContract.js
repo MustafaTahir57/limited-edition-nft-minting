@@ -106,7 +106,7 @@ export const useMintPriceUSDT = (amount = "1") => {
   });
 
   return {
-    priceUSDT: data ? Number(data) / 1e6 : 0,
+    priceUSDT: data ? Number(data) / 1e18 : 0,
     isLoading: isPending,
     refetch,
   };

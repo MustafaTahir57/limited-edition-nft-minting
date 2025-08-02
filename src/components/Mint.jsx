@@ -51,7 +51,7 @@ function Mint() {
               <br />
               <span className="strat">Price: {priceUSDT} USDT</span>
               <br />
-              <span className="strat">Remaining: {totalSupply}</span>
+              {/* <span className="strat">Remaining: {totalSupply}</span>  */}
             </span>
           </div>
 {/* /{MaxSupply} */}

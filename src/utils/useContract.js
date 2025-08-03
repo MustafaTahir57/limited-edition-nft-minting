@@ -1,3 +1,5 @@
+// 🔁 hooks/nftHooks.js
+
 import {
   useAccount,
   useReadContract,
@@ -5,10 +7,11 @@ import {
   useWaitForTransactionReceipt,
   usePublicClient,
 } from "wagmi";
+import { useBalance } from "wagmi";
 
-import { readContract } from "wagmi/actions";
+
 import { parseUnits } from "viem";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -16,76 +19,75 @@ import "react-toastify/dist/ReactToastify.css";
 import { NFTAddress, NFTABI } from "../contracts/NFT";
 import { USDTAddress, USDT_ABI } from "../contracts/Usdt";
 
-// Fetch User NFTs
+// ✅ Fetch NFTs and metadata
 export const useFetchUserNFTs = () => {
   const { address, chain } = useAccount();
   const chainId = chain?.id;
-  const publicClient = usePublicClient(); // ✅ get client from wagmi
-
+  const publicClient = usePublicClient();
   const [nfts, setNfts] = useState([]);
 
-  const { data: tokenIds, refetch } = useReadContract({
+  const { data: tokenIds, refetch: refetchTokenIds } = useReadContract({
     address: NFTAddress,
     abi: NFTABI,
     functionName: "walletOfOwner",
     args: [address],
-    chainId: chainId,
+    chainId,
     enabled: !!address && !!chainId,
     watch: true,
   });
 
-  useEffect(() => {
-    const fetchMetadata = async () => {
-      if (!tokenIds || !address || !publicClient) return;
+  const fetchMetadata = useCallback(async () => {
+    if (!tokenIds || !address || !publicClient) return;
 
-      try {
-        const nftList = await Promise.all(
-          tokenIds.map(async (tokenId) => {
-            try {
-              const tokenURI = await publicClient.readContract({
-                address: NFTAddress,
-                abi: NFTABI,
-                functionName: "tokenURI",
-                args: [tokenId],
-              });
+    try {
+      const nftList = await Promise.all(
+        tokenIds.map(async (tokenId) => {
+          try {
+            const tokenURI = await publicClient.readContract({
+              address: NFTAddress,
+              abi: NFTABI,
+              functionName: "tokenURI",
+              args: [tokenId],
+            });
 
-              const fixedURI = tokenURI.startsWith("ipfs://")
-                ? tokenURI.replace("ipfs://", "https://ipfs.io/ipfs/")
-                : tokenURI;
+            const fixedURI = tokenURI.startsWith("ipfs://")
+              ? tokenURI.replace("ipfs://", "https://ipfs.io/ipfs/")
+              : tokenURI;
 
-              const res = await fetch(fixedURI);
-              const metadata = await res.json();
-              return { tokenId, ...metadata };
-            } catch (e) {
-              console.warn("Error for tokenId", tokenId, e);
-              return null;
-            }
-          })
-        );
+            const res = await fetch(fixedURI);
+            const metadata = await res.json();
+            return { tokenId, ...metadata };
+          } catch (e) {
+            console.warn("Error fetching tokenId", tokenId, e);
+            return null;
+          }
+        })
+      );
 
-        const validNfts = nftList.filter((item) => item !== null);
-        setNfts(validNfts);
-        console.log("Fetched NFTs:", validNfts);
-      } catch (err) {
-        console.error("Error fetching metadata", err);
-        toast.error("Error fetching NFT metadata");
-      }
-    };
-
-    fetchMetadata();
+      const validNfts = nftList.filter((item) => item !== null);
+      setNfts(validNfts);
+      console.log("Fetched NFTs:", validNfts);
+    } catch (err) {
+      console.error("Metadata Fetch Error:", err);
+      toast.error("❌ Error fetching NFT metadata");
+    }
   }, [tokenIds, address, publicClient]);
 
-  return { nfts, refetch };
+  useEffect(() => {
+    fetchMetadata();
+  }, [fetchMetadata]);
+
+  return { nfts, refetch: fetchMetadata, refetchTokenIds };
 };
 
-// Price in BNB
+// ✅ Mint price in BNB
 export const useMintPriceBNB = (amount = "1") => {
   const { data, isPending, refetch } = useReadContract({
     address: NFTAddress,
     abi: NFTABI,
     functionName: "getMintPriceETH",
     args: [amount],
-    watch: true, // auto update on chain changes
+    watch: true,
   });
 
   return {
@@ -95,7 +97,7 @@ export const useMintPriceBNB = (amount = "1") => {
   };
 };
 
-// Price in USDT
+// ✅ Mint price in USDT
 export const useMintPriceUSDT = (amount = "1") => {
   const { data, isPending, refetch } = useReadContract({
     address: NFTAddress,
@@ -106,12 +108,13 @@ export const useMintPriceUSDT = (amount = "1") => {
   });
 
   return {
-    priceUSDT: data ? Number(data) / 1e18 : 0,
+    priceUSDT: data ? Number(data) : 0,
     isLoading: isPending,
     refetch,
   };
 };
-// hooks/useCurrentDrop.js
+
+// ✅ Current Drop
 export const useCurrentDrop = () => {
   const { data, isPending, refetch } = useReadContract({
     address: NFTAddress,
@@ -119,16 +122,10 @@ export const useCurrentDrop = () => {
     functionName: "getCurrentDrop",
   });
 
-  console.log("useCurrentDrop", data);
-
-  return {
-    drop: data,
-    isLoading: isPending,
-    refetch,
-  };
+  return { drop: data, isLoading: isPending, refetch };
 };
 
-// hooks/useDropRemaining.js
+// ✅ Drop Remaining
 export const useDropRemaining = (drop) => {
   const { data, isPending, refetch } = useReadContract({
     address: NFTAddress,
@@ -138,16 +135,10 @@ export const useDropRemaining = (drop) => {
     watch: true,
   });
 
-  console.log("useDropRemaining", data);
-
-  return {
-    remaining: data,
-    isLoading: isPending,
-    refetch,
-  };
+  return { remaining: data, isLoading: isPending, refetch };
 };
 
-// Total Supply
+// ✅ Total Supply
 export const useTotalSupply = () => {
   const { data, isPending, refetch } = useReadContract({
     address: NFTAddress,
@@ -156,12 +147,10 @@ export const useTotalSupply = () => {
     watch: true,
   });
 
-  return {
-    totalSupply: data ? Number(data) : 0,
-    isLoading: isPending,
-    refetch,
-  };
+  return { totalSupply: data ? Number(data) : 0, isLoading: isPending, refetch };
 };
+
+// ✅ Max Supply
 export const useMaxSupply = () => {
   const { data, isPending, refetch } = useReadContract({
     address: NFTAddress,
@@ -170,116 +159,170 @@ export const useMaxSupply = () => {
     watch: true,
   });
 
-  return {
-   MaxSupply: data ? Number(data) : 0,
-    isLoading: isPending,
-    refetch,
-  };
+  return { MaxSupply: data ? Number(data) : 0, isLoading: isPending, refetch };
 };
 
-// Approve USDT hook with toast
-export const useApproveUSDT = (amount = "10", onSuccessRefetch = () => {}) => {
+export const useApproveUSDT = (customAmount, onSuccessRefetch = () => {}) => {
+  const { priceUSDT } = useMintPriceUSDT("1");
+  const { address } = useAccount();
   const { writeContractAsync } = useWriteContract();
   const [hash, setHash] = useState(null);
   const { isLoading, isSuccess } = useWaitForTransactionReceipt({ hash });
 
+  const { data: usdtBalanceRaw } = useReadContract({
+    address: USDTAddress,
+    abi: USDT_ABI,
+    functionName: "balanceOf",
+    args: [address],
+  });
+
   useEffect(() => {
     if (isSuccess) {
-      toast.success("USDT approved successfully!");
+      toast.success("✅ USDT approved!");
       onSuccessRefetch();
     }
   }, [isSuccess]);
 
   const approve = async () => {
+    let amount;
+
+ 
+  
+
+    // Check balance
+    if (!usdtBalanceRaw || usdtBalanceRaw < amount) {
+      toast.error("❌ Insufficient USDT balance!");
+      return;
+    }
+
     try {
       const txHash = await writeContractAsync({
         address: USDTAddress,
         abi: USDT_ABI,
         functionName: "approve",
-        args: [NFTAddress, parseUnits(amount.toString(), 6)],
+        args: [NFTAddress, amount],
       });
       setHash(txHash);
-      toast.info("Approve transaction sent. Waiting for confirmation...");
+      toast.info("⏳ Approving USDT...");
     } catch (err) {
-      console.error("USDT Approve Error:", err);
-      toast.error("Approve failed: " + (err?.message || err));
+      console.error("Approve Error:", err);
+      toast.error("❌ Approval failed: " + (err?.message || err));
     }
   };
 
   return { approve, isLoading, isSuccess };
 };
+// ✅ Mint with BNB
 
-// Mint with BNB hook with toast and auto update
 export const useMintWithBNB = (remaining, onSuccessRefetch = () => {}) => {
   const { writeContractAsync } = useWriteContract();
   const [hash, setHash] = useState(null);
-  const { isLoading, isSuccess } = useWaitForTransactionReceipt({ hash });
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { isLoading: isConfirmed, isSuccess } = useWaitForTransactionReceipt({ hash });
+
+  const { address } = useAccount();
+  const { data: bnbBalance } = useBalance({ address });
 
   useEffect(() => {
     if (isSuccess) {
-      toast.success("NFT Minted successfully!");
+      toast.success("🎉 NFT Minted with BNB!");
       onSuccessRefetch();
+      setIsProcessing(false);
     }
   }, [isSuccess]);
 
   const mintNFT = async (priceBNB) => {
     if (!remaining || remaining === 0) {
-      toast.warn("Drop sold out! Please wait for the next drop.");
+      toast.warn("Drop sold out!");
+      return;
+    }
+
+    const priceInWei = parseUnits(priceBNB.toString(), 18);
+
+    if (!bnbBalance || bnbBalance.value < priceInWei) {
+      toast.error("❌ Insufficient BNB balance!");
       return;
     }
 
     try {
+      setIsProcessing(true);
       const txHash = await writeContractAsync({
         address: NFTAddress,
         abi: NFTABI,
         functionName: "buyNFTWithETH",
         args: ["1"],
-        value: parseUnits(priceBNB.toString(), 18),
+        value: priceInWei,
       });
       setHash(txHash);
-      toast.info("Mint transaction sent. Waiting for confirmation...");
+      toast.info("⏳ Minting NFT...");
     } catch (err) {
+      setIsProcessing(false);
       console.error("BNB Mint Error:", err);
-      toast.error("Mint failed: " + (err?.message || err));
+      toast.error("❌ Mint failed: " + (err?.message || err));
     }
   };
 
-  return { mintNFT, isLoading, isSuccess };
+  return { mintNFT, isLoading: isProcessing || isConfirmed, isSuccess };
 };
 
-// Mint with USDT hook with toast
-export const useMintWithUSDT = (remaining, onSuccessRefetch = () => {}) => {
+
+
+// ✅ Mint with USDT
+
+
+export const useMintWithUSDT = (remaining, onSuccessRefetch = () => {}, usdtAddress, priceUSDT) => {
+  const { address } = useAccount();
   const { writeContractAsync } = useWriteContract();
   const [hash, setHash] = useState(null);
-  const { isLoading, isSuccess } = useWaitForTransactionReceipt({ hash });
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { isLoading: isConfirmed, isSuccess } = useWaitForTransactionReceipt({ hash });
+
+  const { data: usdtBalanceRaw } = useReadContract({
+    address: usdtAddress,
+    abi: USDT_ABI,
+    functionName: "balanceOf",
+    args: [address],
+  });
 
   useEffect(() => {
     if (isSuccess) {
-      toast.success("NFT Minted successfully!");
+      toast.success("🎉 NFT Minted with USDT!");
       onSuccessRefetch();
+      setIsProcessing(false);
     }
   }, [isSuccess]);
 
   const mint = async () => {
     if (!remaining || remaining === 0) {
-      toast.warn("Drop sold out! Please wait for the next drop.");
+      toast.warn("Drop sold out!");
+      return;
+    }
+
+    // const price = parseUnits(priceUSDT.toString(), 18);
+
+    if (!usdtBalanceRaw || usdtBalanceRaw < priceUSDT) {
+      toast.error("❌ Insufficient USDT balance!");
       return;
     }
 
     try {
+      setIsProcessing(true);
       const txHash = await writeContractAsync({
         address: NFTAddress,
         abi: NFTABI,
         functionName: "buyNFTWithUSDT",
-        args: ["97"],
+        args: ["1"],
       });
       setHash(txHash);
-      toast.info("Mint transaction sent. Waiting for confirmation...");
+      toast.info("⏳ Minting NFT...");
     } catch (err) {
+      setIsProcessing(false);
       console.error("USDT Mint Error:", err);
-      toast.error("Mint failed: " + (err?.message || err));
+      toast.error("❌ Mint failed: " + (err?.message || err));
     }
   };
 
-  return { mint, isLoading, isSuccess };
+  return { mint, isLoading: isProcessing || isConfirmed, isSuccess };
 };
+
+

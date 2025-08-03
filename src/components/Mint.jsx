@@ -20,17 +20,17 @@ function Mint() {
   const { priceBNB, refetch: refetchPriceBNB } = useMintPriceBNB();
   const { totalSupply, refetch: refetchTotalSupply } = useTotalSupply();
   const { MaxSupply, refetch: refetchMaxSupply } = useMaxSupply();
-  const { nfts, refetch: refetchNFTs } = useFetchUserNFTs();
+const { nfts, refetch } = useFetchUserNFTs();
 
   // Function to refetch all data on mint success
   const onMintSuccess = () => {
     refetchPriceBNB();
     refetchTotalSupply();
     refetchMaxSupply();
-    refetchNFTs();
+    refetch();
   };
-  const { mint } = useMintWithUSDT(onMintSuccess);
-  const { mintNFT, isLoading } = useMintWithBNB(onMintSuccess);
+  const { mint, isLoading: isMintingUSDT  } = useMintWithUSDT(onMintSuccess);
+  const { mintNFT, isLoading: isMintingBNB  } = useMintWithBNB(onMintSuccess);
   return (
     <>
       <ToastContainer />
@@ -49,14 +49,14 @@ function Mint() {
             <span>
               <span className="strat">Price: {priceBNB} ETH</span>
               <br />
-              <span className="strat">Price: {priceUSDT} USDT</span>
+              <span className="strat">Price: {priceUSDT/ 1e6} USDT</span>
               <br />
               {/* <span className="strat">Remaining: {totalSupply}</span>  */}
             </span>
           </div>
 {/* /{MaxSupply} */}
-          <button className="mint-button" onClick={() => mintNFT(priceBNB)}>
-            Mint ETH
+          <button className="mint-button" onClick={() => mintNFT(priceBNB)}  disabled={isMintingBNB}>
+        {isMintingBNB ? "Minting..." : "Mint with ETH"}
           </button>
           <button
             className="mint-button"
@@ -65,8 +65,9 @@ function Mint() {
               await approve(); // approve with priceUSDT
               await mint();
             }}
+             disabled={isMintingUSDT}
           >
-            Mint USDT
+          {isMintingUSDT ? "Minting..." : "Mint with USDT"}
           </button>
         </div>
 

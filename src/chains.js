@@ -1,35 +1,35 @@
-// // chains/bscTestnet.js or directly in your config file
 import { defineChain } from "viem";
 
-export const bscTestnet = defineChain({
-  id: 97,
-  name: "Binance Smart Chain Testnet",
+export const ethMainnet = defineChain({
+  id: 1,
+  name: "Ethereum Mainnet",
   nativeCurrency: {
-    name: "Binance Chain Native Token",
-    symbol: "tBNB",
+    name: "Ether",
+    symbol: "ETH",
     decimals: 18,
   },
   rpcUrls: {
     default: {
-      http: ["https://data-seed-prebsc-1-s1.binance.org:8545"],
+      http: ["https://eth.llamarpc.com"], // ✅ Free & fast public RPC
     },
     public: {
-      http: ["https://data-seed-prebsc-1-s1.binance.org:8545"],
+      http: ["https://eth.llamarpc.com"],
     },
   },
   blockExplorers: {
     default: {
-      name: "BscScan",
-      url: "https://testnet.bscscan.com",
+      name: "Etherscan",
+      url: "https://etherscan.io",
     },
   },
   contracts: {
     multicall3: {
-      address: "0xca11bde05977b3631167028862be2a173976ca11", // universal Multicall3 used in many testnets
-      blockCreated: 1n, // Use real block if you want, or just use 1n
+      address: "0xca11bde05977b3631167028862be2a173976ca11", // ✅ Multicall3 on Ethereum
+      blockCreated: 14353601n,
     },
   },
 });
+
 
 // import { defineChain } from "viem";
 

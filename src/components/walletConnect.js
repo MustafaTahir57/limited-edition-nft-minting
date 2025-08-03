@@ -10,7 +10,7 @@ import {
 import "./walletConnect.css";
 import { walletConnect } from "wagmi/connectors";
 import { useConnectorClient } from "wagmi";
-import { bscTestnet } from "viem/chains";
+import { ethMainnet  } from "viem/chains";
 
 const WalletConnect = () => {
   const chainId = useChainId();
@@ -38,10 +38,10 @@ const WalletConnect = () => {
 
   useEffect(() => {
     const ensureBscTestnet = async () => {
-      if (isConnected && chainId !== 97) {
+      if (isConnected && chainId !== 1) {
         try {
           console.log("⚠️ Not on BSC Testnet. Switching...");
-          await switchChain({ chainId: 97 });
+          await switchChain({ chainId: 1 });
           console.log("✅ Switched to BSC Testnet");
         } catch (err) {
           console.error("❌ Failed to switch network:", err);

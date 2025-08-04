@@ -12,7 +12,7 @@ import {
   useApproveUSDT,
   useMintWithUSDT,
 } from "../utils/useContract";
-import logo from "../components/assets/WhatsApp Image 2025-08-01 at 12.19.08 PM.png"
+import logo from "../components/assets/WhatsApp Image 2025-08-01 at 12.19.08 PM.png";
 function Mint() {
   const { priceUSDT } = useMintPriceUSDT("1");
 
@@ -20,7 +20,7 @@ function Mint() {
   const { priceBNB, refetch: refetchPriceBNB } = useMintPriceBNB();
   const { totalSupply, refetch: refetchTotalSupply } = useTotalSupply();
   const { MaxSupply, refetch: refetchMaxSupply } = useMaxSupply();
-const { nfts, refetch } = useFetchUserNFTs();
+  const { nfts, refetch } = useFetchUserNFTs();
 
   // Function to refetch all data on mint success
   const onMintSuccess = () => {
@@ -29,13 +29,15 @@ const { nfts, refetch } = useFetchUserNFTs();
     refetchMaxSupply();
     refetch();
   };
-  const { mint, isLoading: isMintingUSDT  } = useMintWithUSDT(onMintSuccess);
-  const { mintNFT, isLoading: isMintingBNB  } = useMintWithBNB(onMintSuccess);
+  const { mint, isLoading: isMintingUSDT } = useMintWithUSDT(onMintSuccess);
+  const { mintNFT, isLoading: isMintingBNB } = useMintWithBNB(onMintSuccess);
   return (
     <>
       <ToastContainer />
       <nav className="navbar">
-        <div className="logo"><img width={150} src={logo} alt="" /></div>
+        <div className="logo">
+          <img width={150} src={logo} alt="" />
+        </div>
         <WalletConnect />
       </nav>
 
@@ -49,14 +51,18 @@ const { nfts, refetch } = useFetchUserNFTs();
             <span>
               <span className="strat">Price: {priceBNB} ETH</span>
               <br />
-              <span className="strat">Price: {priceUSDT/ 1e6} USDT</span>
+              <span className="strat">Price: {priceUSDT / 1e6} USDT</span>
               <br />
               {/* <span className="strat">Remaining: {totalSupply}</span>  */}
             </span>
           </div>
-{/* /{MaxSupply} */}
-          <button className="mint-button" onClick={() => mintNFT(priceBNB)}  disabled={isMintingBNB}>
-        {isMintingBNB ? "Minting..." : "Mint with ETH"}
+          {/* /{MaxSupply} */}
+          <button
+            className="mint-button"
+            onClick={() => mintNFT(priceBNB)}
+            disabled={isMintingBNB}
+          >
+            {isMintingBNB ? "Minting..." : "Mint with ETH"}
           </button>
           <button
             className="mint-button"
@@ -65,9 +71,9 @@ const { nfts, refetch } = useFetchUserNFTs();
               await approve(); // approve with priceUSDT
               await mint();
             }}
-             disabled={isMintingUSDT}
+            disabled={isMintingUSDT}
           >
-          {isMintingUSDT ? "Minting..." : "Mint with USDT"}
+            {isMintingUSDT ? "Minting..." : "Mint with USDT"}
           </button>
         </div>
 
@@ -94,7 +100,7 @@ const { nfts, refetch } = useFetchUserNFTs();
       </main>
 
       <footer className="footer" style={{ marginTop: "20px" }}>
-        <p>© 2023 NFT Collection. All rights reserved.</p>
+        <p>© 2025 NFT Collection. All rights reserved.</p>
       </footer>
     </>
   );

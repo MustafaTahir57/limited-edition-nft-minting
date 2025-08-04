@@ -240,7 +240,7 @@ export const useMintWithBNB = (remaining, onSuccessRefetch = () => {}) => {
     const priceInWei = parseUnits(priceBNB.toString(), 18);
 
     if (!bnbBalance || bnbBalance.value < priceInWei) {
-      toast.error("❌ Insufficient BNB balance!");
+      toast.error("Insufficient balance!");
       return;
     }
 
@@ -257,7 +257,7 @@ export const useMintWithBNB = (remaining, onSuccessRefetch = () => {}) => {
       toast.info("⏳ Minting NFT...");
     } catch (err) {
       setIsProcessing(false);
-      console.error("BNB Mint Error:", err);
+      console.error("Mint Error:", err);
       toast.error("❌ Mint failed: " + (err?.message || err));
     }
   };

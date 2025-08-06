@@ -50,7 +50,6 @@ const WalletConnect = () => {
     ensureEthMainnet();
   }, [isConnected, chainId]);
 
-
   const [showModal, setshowModal] = useState(false);
 
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -104,6 +103,26 @@ const WalletConnect = () => {
                 }}
               >
                 WalletConnect
+              </button>
+
+              <button
+                className="wallet-option"
+                onClick={() => {
+                  const connector = connectors.find(
+                    (c) => c.id === "coinbaseWalletSDK"
+                  );
+
+                  if (!connector) {
+                    alert("WalletConnect not available.");
+                    return;
+                  }
+                  { console.log("On Click", connector) }
+
+                  connect({ connector });
+                }}
+              >
+
+                CoinBase Wallet
               </button>
             </div>
           )}

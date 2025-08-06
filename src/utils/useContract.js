@@ -268,8 +268,6 @@ export const useMintWithBNB = (remaining, onSuccessRefetch = () => {}) => {
 
 
 // ✅ Mint with USDT
-
-
 export const useMintWithUSDT = (remaining, onSuccessRefetch = () => {}, usdtAddress, priceUSDT) => {
   const { address } = useAccount();
   const { writeContractAsync } = useWriteContract();

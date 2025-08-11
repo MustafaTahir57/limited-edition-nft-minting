@@ -190,7 +190,7 @@ export const useApproveUSDT = (customAmount, onSuccessRefetch = () => {}) => {
   
 
     // Check balance
-    if (!usdtBalanceRaw || usdtBalanceRaw < amount) {
+    if (!usdtBalanceRaw || usdtBalanceRaw < priceUSDT) {
       toast.error("❌ Insufficient USDT balance!");
       return;
     }
@@ -200,7 +200,7 @@ export const useApproveUSDT = (customAmount, onSuccessRefetch = () => {}) => {
         address: USDTAddress,
         abi: USDT_ABI,
         functionName: "approve",
-        args: [NFTAddress, amount],
+        args: [NFTAddress, priceUSDT],
       });
       setHash(txHash);
       toast.info("⏳ Approving USDT...");
@@ -298,10 +298,10 @@ export const useMintWithUSDT = (remaining, onSuccessRefetch = () => {}, usdtAddr
 
     // const price = parseUnits(priceUSDT.toString(), 18);
 
-    if (!usdtBalanceRaw || usdtBalanceRaw < priceUSDT) {
-      toast.error("❌ Insufficient USDT balance!");
-      return;
-    }
+    // if (!usdtBalanceRaw || usdtBalanceRaw < priceUSDT) {
+    //   toast.error("❌ Insufficient USDT balance!");
+    //   return;
+    // }
 
     try {
       setIsProcessing(true);

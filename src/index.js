@@ -4,13 +4,13 @@ import { WagmiProvider, http, createConfig } from "wagmi";
 import { mainnet, polygon, optimism } from "wagmi/chains";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App";
-import { ethMainnet } from "./chains";
+import { bscTestnet } from "./chains";
 import { walletConnect, injected, metaMask, coinbaseWallet } from "wagmi/connectors";
 
 const projectId = "a35691f011761d63c1dd60354147a840";
 
 const config = createConfig({
-  chains: [ethMainnet],
+  chains: [bscTestnet],
   connectors: [
     injected(),
     metaMask(),
@@ -30,7 +30,8 @@ const config = createConfig({
     }),
   ],
   transports: {
-    [ethMainnet.id]: http("https://eth.llamarpc.com"), // ✅ Ethereum Mainnet public RPC
+    // [bscTestnet.id]: http("https://eth.llamarpc.com"), // ✅ Ethereum Mainnet public RPC
+    [bscTestnet.id]: http("https://data-seed-prebsc-1-s1.binance.org:8545"), // ✅ test public RPC
   },
 });
 

@@ -38,9 +38,9 @@ const WalletConnect = () => {
 
   useEffect(() => {
     const ensureEthMainnet = async () => {
-      if (isConnected && chainId !== 1) {
+      if (isConnected && chainId !== 97) {
         try {
-          await switchChain({ chainId: 1 });
+          await switchChain({ chainId: 97 });
         } catch (err) {
           console.error("❌ Failed to switch network:", err);
         }

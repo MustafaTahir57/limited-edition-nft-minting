@@ -6,8 +6,11 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
   usePublicClient,
+  useConfig,
 } from "wagmi";
 import { useBalance } from "wagmi";
+import { estimateGas } from "wagmi/actions";
+
 
 
 import { parseUnits } from "viem";
@@ -162,7 +165,22 @@ export const useMaxSupply = () => {
   return { MaxSupply: data ? Number(data) : 0, isLoading: isPending, refetch };
 };
 
-export const useApproveUSDT = (customAmount, onSuccessRefetch = () => {}) => {
+export const useUSDTAllowance = (owner, spender) => {
+  const { data, isPending, refetch } = useReadContract({
+    address: USDTAddress,
+    abi: USDT_ABI,
+    functionName: "allowance",
+    args: [owner, spender],
+    watch: true, // keep it live
+  });
+
+  console.log("Data", data)
+
+  return { allowance: data ?? 0n, isLoading: isPending, refetch };
+};
+
+
+export const useApproveUSDT = (customAmount, onSuccessRefetch = () => { }) => {
   const { priceUSDT } = useMintPriceUSDT("1");
   const { address } = useAccount();
   const { writeContractAsync } = useWriteContract();
@@ -186,15 +204,11 @@ export const useApproveUSDT = (customAmount, onSuccessRefetch = () => {}) => {
   const approve = async () => {
     let amount;
 
- 
-  
-
     // Check balance
     if (!usdtBalanceRaw || usdtBalanceRaw < priceUSDT) {
       toast.error("❌ Insufficient USDT balance!");
       return;
     }
-
     try {
       const txHash = await writeContractAsync({
         address: USDTAddress,
@@ -204,9 +218,14 @@ export const useApproveUSDT = (customAmount, onSuccessRefetch = () => {}) => {
       });
       setHash(txHash);
       toast.info("⏳ Approving USDT...");
-    } catch (err) {
-      console.error("Approve Error:", err);
-      toast.error("❌ Approval failed: " + (err?.message || err));
+    }
+    catch (err) {
+      // Check if it's a user rejection
+      if (err.name === "UserRejectedRequestError" || err?.cause?.name === "UserRejectedRequestError") {
+        toast.error("❌ Approval rejected by user");
+      } else {
+        toast.error("❌ Transaction Failed")
+      }
     }
   };
 
@@ -214,7 +233,7 @@ export const useApproveUSDT = (customAmount, onSuccessRefetch = () => {}) => {
 };
 // ✅ Mint with BNB
 
-export const useMintWithBNB = (remaining, onSuccessRefetch = () => {}) => {
+export const useMintWithBNB = (remaining, onSuccessRefetch = () => { }) => {
   const { writeContractAsync } = useWriteContract();
   const [hash, setHash] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -222,6 +241,7 @@ export const useMintWithBNB = (remaining, onSuccessRefetch = () => {}) => {
 
   const { address } = useAccount();
   const { data: bnbBalance } = useBalance({ address });
+  const config = useConfig()
 
   useEffect(() => {
     if (isSuccess) {
@@ -232,6 +252,7 @@ export const useMintWithBNB = (remaining, onSuccessRefetch = () => {}) => {
   }, [isSuccess]);
 
   const mintNFT = async (priceBNB) => {
+
     if (!remaining || remaining === 0) {
       toast.warn("Drop sold out!");
       return;
@@ -246,34 +267,55 @@ export const useMintWithBNB = (remaining, onSuccessRefetch = () => {}) => {
 
     try {
       setIsProcessing(true);
+      const gasEstimate = await estimateGas(config, {
+        account: address,
+        address: NFTAddress,
+        abi: NFTABI,
+        functionName: "buyNFTWithETH",
+        args: ["1"], // You can replace with dynamic count
+        value: priceInWei,
+      });
+
+      const minGas = 300000n;
+      const bufferedGas = (gasEstimate * 150n) / 100n;
+      const finalGas = bufferedGas > minGas ? bufferedGas : minGas;
+
+
       const txHash = await writeContractAsync({
         address: NFTAddress,
         abi: NFTABI,
         functionName: "buyNFTWithETH",
         args: ["1"],
         value: priceInWei,
+        gas: finalGas,
       });
       setHash(txHash);
       toast.info("⏳ Minting NFT...");
     } catch (err) {
       setIsProcessing(false);
-      console.error("Mint Error:", err);
-      toast.error("❌ Mint failed: " + (err?.message || err));
+      // console.error("Mint Error:", err);
+
+      // Check if it's a user rejection
+      if (err.name === "UserRejectedRequestError" || err?.cause?.name === "UserRejectedRequestError") {
+        toast.error("❌ Transaction rejected by user");
+      } else {
+        toast.error("❌ Mint failed: " + (err?.shortMessage || err?.message || "Unknown error"));
+      }
     }
   };
 
   return { mintNFT, isLoading: isProcessing || isConfirmed, isSuccess };
 };
 
-
-
 // ✅ Mint with USDT
-export const useMintWithUSDT = (remaining, onSuccessRefetch = () => {}, usdtAddress, priceUSDT) => {
+export const useMintWithUSDT = (remaining, onSuccessRefetch = () => { }, usdtAddress, priceUSDT) => {
   const { address } = useAccount();
   const { writeContractAsync } = useWriteContract();
   const [hash, setHash] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const { isLoading: isConfirmed, isSuccess } = useWaitForTransactionReceipt({ hash });
+
+  const config = useConfig()
 
   const { data: usdtBalanceRaw } = useReadContract({
     address: usdtAddress,
@@ -296,27 +338,42 @@ export const useMintWithUSDT = (remaining, onSuccessRefetch = () => {}, usdtAddr
       return;
     }
 
-    // const price = parseUnits(priceUSDT.toString(), 18);
-
-    // if (!usdtBalanceRaw || usdtBalanceRaw < priceUSDT) {
-    //   toast.error("❌ Insufficient USDT balance!");
-    //   return;
-    // }
-
     try {
       setIsProcessing(true);
+      const gasEstimate = await estimateGas(config, {
+        account: address,
+        address: NFTAddress,
+        abi: NFTABI,
+        functionName: "buyNFTWithETH",
+        args: ["1"], // You can replace with dynamic count
+
+      });
+
+      const minGas = 300000n;
+      const bufferedGas = (gasEstimate * 150n) / 100n;
+      const finalGas = bufferedGas > minGas ? bufferedGas : minGas;
+
+      console.log("Final gas", finalGas)
+
       const txHash = await writeContractAsync({
         address: NFTAddress,
         abi: NFTABI,
         functionName: "buyNFTWithUSDT",
         args: ["1"],
+        gas: finalGas
       });
       setHash(txHash);
       toast.info("⏳ Minting NFT...");
     } catch (err) {
       setIsProcessing(false);
-      console.error("USDT Mint Error:", err);
-      toast.error("❌ Mint failed: " + (err?.message || err));
+      // console.error("Mint Error:", err);
+
+      // Check if it's a user rejection
+      if (err.name === "UserRejectedRequestError" || err?.cause?.name === "UserRejectedRequestError") {
+        toast.error("❌ Transaction rejected by user");
+      } else {
+        toast.error("❌ Mint failed: " + (err?.shortMessage || err?.message || "Unknown error"));
+      }
     }
   };
 

@@ -11,8 +11,11 @@ import {
   useMintWithBNB,
   useApproveUSDT,
   useMintWithUSDT,
+  useUSDTAllowance,
 } from "../utils/useContract";
 import logo from "../components/assets/WhatsApp Image 2025-08-01 at 12.19.08 PM.png";
+import { useAccount } from "wagmi";
+import { NFTAddress } from "../contracts/NFT";
 function Mint() {
   const { priceUSDT } = useMintPriceUSDT("1");
 
@@ -21,6 +24,30 @@ function Mint() {
   const { totalSupply, refetch: refetchTotalSupply } = useTotalSupply();
   const { MaxSupply, refetch: refetchMaxSupply } = useMaxSupply();
   const { nfts, refetch } = useFetchUserNFTs();
+
+  const { address } = useAccount();
+  const { allowance, isLoading: allowanceLoading } = useUSDTAllowance(
+    address,
+    NFTAddress
+  );
+
+  const handleMintWithUSDT = async () => {
+    // USDT usually has 6 decimals
+    const price = Number(priceUSDT) / 1e18;
+
+    // Convert allowance BigInt -> readable number
+    const allowanceReadable = Number(allowance) / 1e18; // if token has 18 decimals
+    // const allowanceReadable = Number(allowance) / 1e6; // if token has 6 decimals
+
+    console.log("Allowance:", allowanceReadable , price);
+
+    if (allowanceReadable <= price ) {
+      console.log("Condition Approval True")
+      await approve();
+    }
+
+    await mint();
+  };
 
   // Function to refetch all data on mint success
   const onMintSuccess = () => {
@@ -51,7 +78,7 @@ function Mint() {
             <span>
               <span className="strat">Price: {priceBNB} ETH</span>
               <br />
-              <span className="strat">Price: {priceUSDT / 1e6} USDT</span>
+              <span className="strat">Price: {priceUSDT / 1e18} USDT</span>
               <br />
               {/* <span className="strat">Remaining: {totalSupply}</span>  */}
             </span>
@@ -67,10 +94,7 @@ function Mint() {
           <button
             className="mint-button"
             style={{ marginTop: "10px" }}
-            onClick={async () => {
-              await approve(); // approve with priceUSDT
-              await mint();
-            }}
+            onClick={handleMintWithUSDT}
             disabled={isMintingUSDT}
           >
             {isMintingUSDT ? "Minting..." : "Mint with USDT"}

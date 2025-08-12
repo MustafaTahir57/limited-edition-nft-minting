@@ -10,7 +10,7 @@ import { walletConnect, injected, metaMask, coinbaseWallet } from "wagmi/connect
 const projectId = "a35691f011761d63c1dd60354147a840";
 
 const config = createConfig({
-  chains: [bscTestnet],
+  chains: [mainnet],
   connectors: [
     injected(),
     metaMask(),
@@ -30,8 +30,9 @@ const config = createConfig({
     }),
   ],
   transports: {
-    // [bscTestnet.id]: http("https://eth.llamarpc.com"), // ✅ Ethereum Mainnet public RPC
-    [bscTestnet.id]: http("https://data-seed-prebsc-1-s1.binance.org:8545"), // ✅ test public RPC
+    [mainnet.id]: http(),
+    // // [bscTestnet.id]: http("https://eth.llamarpc.com"), // ✅ Ethereum Mainnet public RPC
+    // [bscTestnet.id]: http("https://data-seed-prebsc-1-s1.binance.org:8545"), // ✅ test public RPC
   },
 });
 

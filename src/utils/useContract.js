@@ -166,7 +166,7 @@ export const useMaxSupply = () => {
 };
 
 export const useUSDTAllowance = (owner, spender) => {
-  const { data, isPending, refetch } = useReadContract({
+  const { data, isPending, refetch : refetchAllowance } = useReadContract({
     address: USDTAddress,
     abi: USDT_ABI,
     functionName: "allowance",
@@ -176,7 +176,7 @@ export const useUSDTAllowance = (owner, spender) => {
 
   console.log("Data", data)
 
-  return { allowance: data ?? 0n, isLoading: isPending, refetch };
+  return { allowance: data ?? 0n, isLoading: isPending, refetchAllowance };
 };
 
 
@@ -185,7 +185,7 @@ export const useApproveUSDT = (customAmount, onSuccessRefetch = () => { }) => {
   const { address } = useAccount();
   const { writeContractAsync } = useWriteContract();
   const [hash, setHash] = useState(null);
-  const { isLoading, isSuccess } = useWaitForTransactionReceipt({ hash });
+  const { isLoading : approvalPending, isSuccess : isUsdtApproved } = useWaitForTransactionReceipt({ hash });
 
   const { data: usdtBalanceRaw } = useReadContract({
     address: USDTAddress,
@@ -195,15 +195,13 @@ export const useApproveUSDT = (customAmount, onSuccessRefetch = () => { }) => {
   });
 
   useEffect(() => {
-    if (isSuccess) {
+    if (isUsdtApproved) {
       toast.success("✅ USDT approved!");
       onSuccessRefetch();
     }
-  }, [isSuccess]);
+  }, [isUsdtApproved]);
 
   const approve = async () => {
-    let amount;
-
     // Check balance
     if (!usdtBalanceRaw || usdtBalanceRaw < priceUSDT) {
       toast.error("❌ Insufficient USDT balance!");
@@ -229,7 +227,7 @@ export const useApproveUSDT = (customAmount, onSuccessRefetch = () => { }) => {
     }
   };
 
-  return { approve, isLoading, isSuccess };
+  return { approve, approvalPending, isUsdtApproved };
 };
 // ✅ Mint with BNB
 
@@ -237,19 +235,19 @@ export const useMintWithBNB = (remaining, onSuccessRefetch = () => { }) => {
   const { writeContractAsync } = useWriteContract();
   const [hash, setHash] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const { isLoading: isConfirmed, isSuccess } = useWaitForTransactionReceipt({ hash });
+  const { isLoading: isConfirmed, isSuccess : nftMintedWithBNb } = useWaitForTransactionReceipt({ hash });
 
   const { address } = useAccount();
   const { data: bnbBalance } = useBalance({ address });
   const config = useConfig()
 
   useEffect(() => {
-    if (isSuccess) {
+    if (nftMintedWithBNb) {
       toast.success("🎉 NFT Minted with BNB!");
       onSuccessRefetch();
       setIsProcessing(false);
     }
-  }, [isSuccess]);
+  }, [nftMintedWithBNb]);
 
   const mintNFT = async (priceBNB) => {
 
@@ -304,7 +302,7 @@ export const useMintWithBNB = (remaining, onSuccessRefetch = () => { }) => {
     }
   };
 
-  return { mintNFT, isLoading: isProcessing || isConfirmed, isSuccess };
+  return { mintNFT, isLoading: isProcessing || isConfirmed, nftMintedWithBNb };
 };
 
 // ✅ Mint with USDT
@@ -313,7 +311,7 @@ export const useMintWithUSDT = (remaining, onSuccessRefetch = () => { }, usdtAdd
   const { writeContractAsync } = useWriteContract();
   const [hash, setHash] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const { isLoading: isConfirmed, isSuccess } = useWaitForTransactionReceipt({ hash });
+  const { isLoading: isConfirmed, isSuccess: nftMinted } = useWaitForTransactionReceipt({ hash });
 
   const config = useConfig()
 
@@ -325,12 +323,12 @@ export const useMintWithUSDT = (remaining, onSuccessRefetch = () => { }, usdtAdd
   });
 
   useEffect(() => {
-    if (isSuccess) {
+    if (nftMinted) {
       toast.success("🎉 NFT Minted with USDT!");
       onSuccessRefetch();
       setIsProcessing(false);
     }
-  }, [isSuccess]);
+  }, [nftMinted]);
 
   const mint = async () => {
     if (!remaining || remaining === 0) {
@@ -377,7 +375,7 @@ export const useMintWithUSDT = (remaining, onSuccessRefetch = () => { }, usdtAdd
     }
   };
 
-  return { mint, isLoading: isProcessing || isConfirmed, isSuccess };
+  return { mint, isLoading: isProcessing || isConfirmed, nftMinted };
 };
 
 

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import nftss from "./assets/nft.jpg";
 import WalletConnect from "./walletConnect";
 import { ToastContainer } from "react-toastify";
@@ -19,35 +19,18 @@ import { NFTAddress } from "../contracts/NFT";
 function Mint() {
   const { priceUSDT } = useMintPriceUSDT("1");
 
-  const { approve } = useApproveUSDT(priceUSDT);
+  const { approve, isUsdtApproved, approvalPending } =
+    useApproveUSDT(priceUSDT);
   const { priceBNB, refetch: refetchPriceBNB } = useMintPriceBNB();
   const { totalSupply, refetch: refetchTotalSupply } = useTotalSupply();
   const { MaxSupply, refetch: refetchMaxSupply } = useMaxSupply();
   const { nfts, refetch } = useFetchUserNFTs();
-
   const { address } = useAccount();
-  const { allowance, isLoading: allowanceLoading } = useUSDTAllowance(
-    address,
-    NFTAddress
-  );
-
-  const handleMintWithUSDT = async () => {
-    // USDT usually has 6 decimals
-    const price = Number(priceUSDT) / 1e18;
-
-    // Convert allowance BigInt -> readable number
-    const allowanceReadable = Number(allowance) / 1e18; // if token has 18 decimals
-    // const allowanceReadable = Number(allowance) / 1e6; // if token has 6 decimals
-
-    console.log("Allowance:", allowanceReadable , price);
-
-    if (allowanceReadable <= price ) {
-      console.log("Condition Approval True")
-      await approve();
-    }
-
-    await mint();
-  };
+  const {
+    allowance,
+    isLoading: allowanceLoading,
+    refetchAllowance,
+  } = useUSDTAllowance(address, NFTAddress);
 
   // Function to refetch all data on mint success
   const onMintSuccess = () => {
@@ -56,8 +39,58 @@ function Mint() {
     refetchMaxSupply();
     refetch();
   };
-  const { mint, isLoading: isMintingUSDT } = useMintWithUSDT(onMintSuccess);
-  const { mintNFT, isLoading: isMintingBNB } = useMintWithBNB(onMintSuccess);
+
+  const {
+    mint,
+    isLoading: isMintingUSDT,
+    nftMinted,
+  } = useMintWithUSDT(onMintSuccess);
+  const {
+    mintNFT,
+    isLoading: isMintingBNB,
+    nftMintedWithBNb,
+  } = useMintWithBNB(onMintSuccess);
+
+  useEffect(() => {
+    if (isUsdtApproved || nftMinted) {
+      refetchAllowance(); // will call allowance again
+    }
+  }, [isUsdtApproved, nftMinted]);
+
+  const handleMintWithUSDT = async () => {
+    const price = Number(priceUSDT) / 1e18;
+    const allowanceReadable = Number(allowance) / 1e18;
+
+    // Step 1: Check allowance
+    if (allowanceReadable < price) {
+      console.log("Condition Approval True");
+      try {
+        await approve(); // try approving
+      } catch (err) {
+        console.error("Approval rejected or failed:", err);
+        return; // stop here if approval failed
+      }
+    } else {
+      await mint();
+    }
+  };
+
+  useEffect(() => {
+    if (isUsdtApproved) {
+      const mintAfterApproval = async () => {
+        await mint();
+      };
+      mintAfterApproval();
+    }
+  }, [isUsdtApproved]);
+
+  useEffect(() => {
+    if (nftMinted || nftMintedWithBNb) {
+      console.log("Running");
+      refetch();
+    }
+  }, [nftMinted, nftMintedWithBNb, refetch]);
+
   return (
     <>
       <ToastContainer />
@@ -89,7 +122,7 @@ function Mint() {
             onClick={() => mintNFT(priceBNB)}
             disabled={isMintingBNB}
           >
-            {isMintingBNB ? "Minting..." : "Mint with ETH"}
+            {isMintingBNB ? "Minting..." : "Mint with Eth"}
           </button>
           <button
             className="mint-button"
@@ -97,7 +130,9 @@ function Mint() {
             onClick={handleMintWithUSDT}
             disabled={isMintingUSDT}
           >
-            {isMintingUSDT ? "Minting..." : "Mint with USDT"}
+            {approvalPending && "Usdt Approving"}
+            {!approvalPending && isMintingUSDT && "Minting USDT"}
+            {!approvalPending && !isMintingUSDT && "Mint with Usdt"}
           </button>
         </div>
 

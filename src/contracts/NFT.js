@@ -1,4 +1,4 @@
-export const NFTAddress = "0xcb53F739C939B565C66a9B33d4F4F5eE49e6E019";
+export const NFTAddress = "0xE5dbC38cF419A09F2F18027Ede649b1288Fc9c90";
 export const NFTABI = [
   { inputs: [], stateMutability: "nonpayable", type: "constructor" },
   {
@@ -468,5 +468,4 @@ export const NFTABI = [
     stateMutability: "view",
     type: "function",
   },
-  { stateMutability: "payable", type: "receive" },
 ];

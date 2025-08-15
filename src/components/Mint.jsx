@@ -111,7 +111,7 @@ function Mint() {
             <span>
               <span className="strat">Price: {priceBNB} ETH</span>
               <br />
-              <span className="strat">Price: {priceUSDT / 1e18} USDT</span>
+              <span className="strat">Price: {priceUSDT / 1e6} USDT</span>
               <br />
               {/* <span className="strat">Remaining: {totalSupply}</span>  */}
             </span>
